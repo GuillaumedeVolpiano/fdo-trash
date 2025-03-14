@@ -21,12 +21,12 @@ import System.Posix.Env(getEnv,getEnvDefault)
 import System.FilePath.Posix((</>),(<.>),dropExtension,splitExtension)
 import System.Directory(getDirectoryContents,removeDirectoryRecursive)
 import Data.Maybe(fromJust,catMaybes)
-import System.Locale(iso8601DateFormat,defaultTimeLocale)
+import Data.Time.Format (iso8601DateFormat,defaultTimeLocale)
 import Text.ParserCombinators.Parsec(parse,many,try,(<|>),string,noneOf,oneOf,many)
-import Data.Time(getCurrentTimeZone,parseTime,localTimeToUTC,UTCTime,formatTime,utcToLocalTime,FormatTime)
+import Data.Time(getCurrentTimeZone,parseTimeM,localTimeToUTC,UTCTime,formatTime,utcToLocalTime,FormatTime)
 import Data.Either(partitionEithers)
 import Control.Monad(when)
-import Data.Algorithm.Diff(getDiff,Diff(..))
+import Data.Algorithm.Diff(getDiff, PolyDiff(..))
 import Data.List(sort)
 import System.Posix.Files(fileSize,getSymbolicLinkStatus,isRegularFile,isDirectory,rename,removeLink,fileExist)
 #if MIN_VERSION_base(4,6,0)
@@ -38,7 +38,7 @@ import qualified System.IO.Error(try, catch)
 eCatch = System.IO.Error.catch
 eTry = System.IO.Error.try
 #endif
-
+  
 
 data TrashFile = TrashFile {
     infoPath   :: FilePath,
@@ -57,7 +57,7 @@ dateLine = do
     dateString <- many $ oneOf "0123456789-T:"
     _ <- many $ noneOf "\n"
     _ <- string "\n"
-    return (parseTime defaultTimeLocale (iso8601DateFormat $ Just "%H:%M:%S") dateString) >>=
+    return (parseTimeM True defaultTimeLocale (iso8601DateFormat $ Just "%H:%M:%S") dateString) >>=
         maybe (fail "Invalid date format") (return.Left)
 
 nameLine = do
